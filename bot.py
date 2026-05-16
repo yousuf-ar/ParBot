@@ -2,7 +2,7 @@
 """
 ParBot - Arabic Wikisource Uncategorized Pages Updater
 Logs in as ParBot and updates ويكي مصدر:صفحات رئيسية غير مصنفة
-with a list of uncategorized main pages (excluding subpages).
+with a list of uncategorized main pages (Namespace 0, excluding subpages).
 """
 
 import os
@@ -16,7 +16,6 @@ TARGET_PAGE = "ويكي مصدر:صفحات رئيسية غير مصنفة"
 
 # Safely fetch the password from GitHub Secrets environment variable
 PASSWORD = os.getenv("WIKI_PASSWORD")
-print(PASSWORD)
 
 if not PASSWORD:
     raise ValueError("Error: WIKI_PASSWORD environment variable is not set.")
@@ -56,13 +55,14 @@ def login():
 
 
 def get_uncategorized_pages():
-    """Fetch all uncategorized pages, excluding subpages (pages with '/' in title)."""
-    print("Fetching uncategorized pages...")
+    """Fetch uncategorized pages in Namespace 0, excluding subpages (pages with '/' in title)."""
+    print("Fetching uncategorized pages (Namespace 0 only)...")
     pages = []
     params = {
         "action": "query",
         "list": "querypage",
         "qppage": "Uncategorizedpages",
+        "qppnamespace": "0",  # <--- CRUCIAL: Limits results to Namespace 0 (Main/Articles)
         "qplimit": "500",
         "format": "json"
     }
@@ -79,13 +79,13 @@ def get_uncategorized_pages():
             if "/" not in title:
                 pages.append(title)
 
-        # Handle continuation
+        # Handle continuation if there are more than 500 results
         if "continue" in data:
             params.update(data["continue"])
         else:
             break
 
-    print(f"Found {len(pages)} uncategorized main pages.")
+    print(f"Found {len(pages)} uncategorized main namespace pages.")
     return sorted(pages)
 
 
@@ -130,7 +130,7 @@ def update_page(content):
         "action": "edit",
         "title": TARGET_PAGE,
         "text": content,
-        "summary": "بوت: تحديث قائمة الصفحات الرئيسية غير المصنفة",
+        "summary": "بوت: تحديث قائمة الصفحات الرئيسية غير المصنفة (النطاق الرئيسي فقط)",
         "bot": "true",
         "token": csrf_token,
         "format": "json"
@@ -152,7 +152,7 @@ def main():
         pages = get_uncategorized_pages()
 
         if not pages:
-            print("No uncategorized pages found. Aborting.")
+            print("No uncategorized pages found in Namespace 0. Aborting.")
             return
 
         content = build_page_content(pages)
