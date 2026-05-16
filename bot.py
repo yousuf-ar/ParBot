@@ -55,9 +55,9 @@ def login():
 
 
 def get_uncategorized_pages():
-    """Fetch uncategorized pages and strictly filter for Namespace 0 (Main Articles) locally."""
-    print("Fetching uncategorized pages and filtering for Namespace 0...")
-    pages = []
+    """Fetch uncategorized pages, batch-check if they still exist via POST, and filter for Namespace 0."""
+    print("Fetching raw uncategorized pages list...")
+    raw_pages = []
     params = {
         "action": "query",
         "list": "querypage",
@@ -66,6 +66,7 @@ def get_uncategorized_pages():
         "format": "json"
     }
 
+    # Step 1: Collect all raw page titles from the special page list
     while True:
         r = session.get(API_URL, params=params)
         r.raise_for_status()
@@ -74,23 +75,51 @@ def get_uncategorized_pages():
         results = data["query"]["querypage"]["results"]
         for item in results:
             title = item["title"]
-            namespace_id = item.get("ns", 0) # Get the page's namespace ID
+            namespace_id = item.get("ns", 0)
             
-            # STRICT FILTER: 
-            # 1. namespace_id == 0 ensures it's ONLY standard articles (blocks مؤلف:, بوابة:, etc.)
-            # 2. "/" not in title ensures it excludes subpages
+            # Initial filter (Namespace 0 and not a subpage)
             if namespace_id == 0 and "/" not in title:
-                pages.append(title)
+                raw_pages.append(title)
 
-        # Handle continuation if there are more than 500 results
         if "continue" in data:
             params.update(data["continue"])
         else:
             break
 
-    print(f"Found {len(pages)} strict namespace 0 main pages.")
-    return sorted(pages)
+    if not raw_pages:
+        print("No pages found to verify.")
+        return []
 
+    print(f"Verifying existence of {len(raw_pages)} pages in batches using POST...")
+    verified_pages = []
+    
+    # Step 2: Batch check titles using POST requests to prevent 414 URI Too Long errors
+    # Reduced slightly to 35 for massive Arabic text handling compatibility
+    batch_size = 35 
+    for i in range(0, len(raw_pages), batch_size):
+        batch = raw_pages[i:i + batch_size]
+        
+        # We pass arguments inside 'data=' instead of 'params=' to force a POST body request
+        batch_data_payload = {
+            "action": "query",
+            "titles": "|".join(batch),
+            "format": "json"
+        }
+        
+        # session.post keeps the URL clean and allows infinitely long payload strings
+        br = session.post(API_URL, data=batch_data_payload)
+        br.raise_for_status()
+        batch_data = br.json()
+        
+        # Safely extract existing pages
+        if "query" in batch_data and "pages" in batch_data["query"]:
+            pages_dict = batch_data["query"]["pages"]
+            for page_id, page_info in pages_dict.items():
+                if "missing" not in page_info:
+                    verified_pages.append(page_info["title"])
+
+    print(f"Verification complete. {len(verified_pages)} pages actually exist.")
+    return sorted(verified_pages)
 def build_page_content(pages):
     """Build the wikitext content for the target page."""
     now = datetime.now(timezone.utc)
