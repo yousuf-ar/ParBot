@@ -16,6 +16,7 @@ TARGET_PAGE = "ويكي مصدر:صفحات رئيسية غير مصنفة"
 
 # Safely fetch the password from GitHub Secrets environment variable
 PASSWORD = os.getenv("WIKI_PASSWORD")
+print(PASSWORD)
 
 if not PASSWORD:
     raise ValueError("Error: WIKI_PASSWORD environment variable is not set.")
