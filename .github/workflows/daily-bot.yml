@@ -3,7 +3,7 @@ name: Run Arabic Wikisource Bot (Python)
 on:
   schedule:
     # 15:00 UTC is exactly 6:00 PM Baghdad time
-    - cron: '*/3 * * * *'
+    - cron: '0 19 * * *'
   workflow_dispatch: # This adds a manual "Run" button so you don't have to wait for cron
 
 jobs:
