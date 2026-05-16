@@ -55,14 +55,13 @@ def login():
 
 
 def get_uncategorized_pages():
-    """Fetch uncategorized pages in Namespace 0, excluding subpages (pages with '/' in title)."""
-    print("Fetching uncategorized pages (Namespace 0 only)...")
+    """Fetch uncategorized pages and strictly filter for Namespace 0 (Main Articles) locally."""
+    print("Fetching uncategorized pages and filtering for Namespace 0...")
     pages = []
     params = {
         "action": "query",
         "list": "querypage",
         "qppage": "Uncategorizedpages",
-        "qppnamespace": "0",  # <--- CRUCIAL: Limits results to Namespace 0 (Main/Articles)
         "qplimit": "500",
         "format": "json"
     }
@@ -75,8 +74,12 @@ def get_uncategorized_pages():
         results = data["query"]["querypage"]["results"]
         for item in results:
             title = item["title"]
-            # Exclude subpages (contain '/')
-            if "/" not in title:
+            namespace_id = item.get("ns", 0) # Get the page's namespace ID
+            
+            # STRICT FILTER: 
+            # 1. namespace_id == 0 ensures it's ONLY standard articles (blocks مؤلف:, بوابة:, etc.)
+            # 2. "/" not in title ensures it excludes subpages
+            if namespace_id == 0 and "/" not in title:
                 pages.append(title)
 
         # Handle continuation if there are more than 500 results
@@ -85,9 +88,8 @@ def get_uncategorized_pages():
         else:
             break
 
-    print(f"Found {len(pages)} uncategorized main namespace pages.")
+    print(f"Found {len(pages)} strict namespace 0 main pages.")
     return sorted(pages)
-
 
 def build_page_content(pages):
     """Build the wikitext content for the target page."""
