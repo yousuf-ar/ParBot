@@ -11,7 +11,8 @@ define('USERNAME', 'ParBot');
 define('TARGET_PAGE', 'ويكي مصدر:صفحات رئيسية غير مصنفة');
 
 // Fetch password safely from environment variables
-$password = getenv('WIKI_PASSWORD');
+// $password = getenv('WIKI_PASSWORD');
+$password = 'JoseWikipedia2004'
 if (!$password) {
     die("Error: WIKI_PASSWORD environment variable is not set.\n");
 }
