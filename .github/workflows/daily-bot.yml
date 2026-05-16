@@ -1,0 +1,19 @@
+name: Run Arabic Wikisource Bot
+on:
+  schedule:
+    - cron: '0 15 * * *' # Change to your preferred time (UTC)
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, mbstring # Necessary extensions for this bot
+      - name: Execute script
+        run: php UpdateUncategorizedPages.php
+        env:
+          WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
