@@ -161,7 +161,7 @@ def update_page(content):
         "action": "edit",
         "title": TARGET_PAGE,
         "text": content,
-        "summary": "بوت: تحديث قائمة الصفحات الرئيسية غير المصنفة (النطاق الرئيسي فقط)",
+        "summary": "بوت: تحديث قائمة الصفحات الرئيسية غير المصنفة",
         "bot": "true",
         "token": csrf_token,
         "format": "json"
