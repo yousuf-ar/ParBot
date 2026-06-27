@@ -2,13 +2,14 @@ name: Run Arabic Wikisource Bot (Python)
 
 on:
   schedule:
-    # 15:00 UTC is exactly 6:00 PM Baghdad time
+    # 19:00 UTC
     - cron: '0 19 * * *'
-  workflow_dispatch: # This adds a manual "Run" button so you don't have to wait for cron
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
@@ -23,7 +24,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Execute Python Script
-        run: python bot.py
+      - name: Execute Python Script (with retries)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 10
+          retry_on: error
+          retry_wait_seconds: 30
+          command: python bot.py
         env:
           WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
